@@ -40,7 +40,7 @@ public class BoardController {
             throw new BadRequestException(utils.getErrorMessages(errors));
         }
 
-        
+
         return null;
     }
 
