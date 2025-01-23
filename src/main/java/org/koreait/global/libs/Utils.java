@@ -5,11 +5,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.koreait.global.entities.CodeValue;
 import org.koreait.global.repositories.CodeValueRepository;
+import org.koreait.member.MemberUtil;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
@@ -27,6 +29,7 @@ public class Utils {
     private final MessageSource messageSource;
     private final DiscoveryClient discoveryClient;
     private final CodeValueRepository codeValueRepository;
+    private final MemberUtil memberUtil;
 
     /**
      * 메서지 코드로 조회된 문구
@@ -162,6 +165,14 @@ public class Utils {
        return item == null ? null : (T)item.getValue();
     }
 
+    /**
+     * 저장된 값 code로 삭제
+     * @param code
+     */
+    public void deleteValue(String code) {
+        codeValueRepository.deleteById(code);
+    }
+
     public String getUserHash() {
         String userKey = "" + Objects.hash("userHash");
         String userHash = "";
@@ -176,5 +187,42 @@ public class Utils {
         }
 
         return "";
+    }
+
+    public boolean isMobile() {
+
+        // 요청 헤더 - User-Agent / 브라우저 정보
+        String ua = request.getHeader("User-Agent");
+        String pattern = ".*(iPhone|iPod|iPad|BlackBerry|Android|Windows CE|LG|MOT|SAMSUNG|SonyEricsson).*";
+
+
+        return StringUtils.hasText(ua) && ua.matches(pattern);
+    }
+
+    /**
+     * 요청 헤더
+     *  - JWT 토큰이 있으면 자동 추가
+     * @return
+     */
+    public HttpHeaders getRequestHeader() {
+        String token = getAuthToken();
+        HttpHeaders headers = new HttpHeaders();
+        if (StringUtils.hasText(token)){
+            headers.setBearerAuth(token);
+        }
+
+        return headers;
+    }
+
+    // 회원, 비회원 구분 해시
+    public int getMemberHash() {
+        // 회원 - 회원번호, 비회원 - IP + User-Agent
+        if (memberUtil.isLogin()) return Objects.hash(memberUtil.getMember().getSeq());
+        else { // 비회원
+            String ip = request.getRemoteAddr();
+            String ua = request.getHeader("User-Agent");
+
+            return Objects.hash(ip, ua);
+        }
     }
 }
