@@ -20,11 +20,13 @@ import org.koreait.global.paging.Pagination;
 import org.koreait.member.Member;
 import org.koreait.member.MemberUtil;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 
+@Lazy
 @Service
 @RequiredArgsConstructor
 public class BoardInfoService {
@@ -39,6 +41,7 @@ public class BoardInfoService {
 
     /**
      * 게시글 한개 조회
+     *
      * @param seq
      * @return
      */
@@ -52,7 +55,6 @@ public class BoardInfoService {
     }
 
     public RequestBoard getForm(Long seq) {
-
         return getForm(get(seq));
     }
 
@@ -72,6 +74,7 @@ public class BoardInfoService {
 
     /**
      * 게시글 목록
+     *
      * @param search
      * @return
      */
@@ -80,11 +83,10 @@ public class BoardInfoService {
         Board board = null;
         int rowsPerPage = 0;
         List<String> bids = search.getBid();
-        if (bids != null && bids.isEmpty()) {
+        if (bids != null && !bids.isEmpty()) {
             board = configInfoService.get(bids.get(0));
             rowsPerPage = board.getRowsPerPage();
         }
-
         int limit = search.getLimit() > 0 ? search.getLimit() : rowsPerPage;
         int offset = (page - 1) * limit;
 
@@ -92,12 +94,12 @@ public class BoardInfoService {
         BooleanBuilder andBuilder = new BooleanBuilder();
         QBoardData boardData = QBoardData.boardData;
 
-//        게시판 아이디
+        // 게시판 아이디
         if (bids != null && !bids.isEmpty()) {
-            andBuilder.and(boardData.board.bid.in(bids)); //아이디 중에 해당하는 아이디가 있는지
+            andBuilder.and(boardData.board.bid.in(bids));
         }
 
-//        분류 검색
+        // 분류 검색
         List<String> categories = search.getCategory();
         if (categories != null && !categories.isEmpty()) {
             andBuilder.and(boardData.category.in(categories));
@@ -105,15 +107,15 @@ public class BoardInfoService {
 
         /**
          * 키워드 검색
-         * sopt
+         *  sopt
          *      - ALL - 제목 + 내용 + 작성자(작성자 + 이메일 + 회원명)
          *      - SUBJECT - 제목
          *      - CONTENT - 내용
          *      - SUBJECT_CONTENT - 제목 + 내용
          *      - POSTER - 작성자 + 이메일 + 회원명
          */
-        String sopt = search.getSopt(); //옵션
-        String skey = search.getSkey(); //키워드
+        String sopt = search.getSopt();
+        String skey = search.getSkey();
         sopt = StringUtils.hasText(sopt) ? sopt : "ALL";
         if (StringUtils.hasText(skey)) {
             skey = skey.trim();
@@ -122,14 +124,15 @@ public class BoardInfoService {
             StringExpression content = boardData.content;
             StringExpression poster = boardData.poster.concat(boardData.createdBy);
 
+
             StringExpression condition = null;
             if (sopt.equals("SUBJECT")) { // 제목 검색
                 condition = subject;
             } else if (sopt.equals("CONTENT")) { // 내용 검색
                 condition = content;
-            } else if (sopt.equals("SUBJECT_POSTER")) { // 제목 + 내용
+            } else if (sopt.equals("SUBJECT_CONTENT")) { // 제목 + 내용
                 condition = subject.concat(content);
-            } else if (sopt.equals("POSTER")) { // 작성자 + 이메일 + 회원명
+            } else if (sopt.equals("POSTER")){
                 condition = poster;
             } else { // 통합 검색
                 condition = subject.concat(content).concat(poster);
@@ -138,7 +141,7 @@ public class BoardInfoService {
             andBuilder.and(condition.contains(skey));
         }
 
-//        회원 이메일
+        // 회원 이메일
         List<String> emails = search.getEmail();
         if (emails != null && !emails.isEmpty()) {
             andBuilder.and(boardData.createdBy.in(emails));
@@ -166,9 +169,11 @@ public class BoardInfoService {
             } else {
                 query.orderBy(boardData.notice.desc(), boardData.createdAt.desc());
             }
+
         } else { // 기본 정렬 조건 - notice DESC, createdAt DESC
             query.orderBy(boardData.notice.desc(), boardData.createdAt.desc());
         }
+
         /* 정렬 조건 처리 E */
 
         List<BoardData> items = query.fetch();
@@ -182,7 +187,7 @@ public class BoardInfoService {
             ranges = utils.isMobile() ? board.getPageRangesMobile() : board.getPageRanges();
         }
 
-        Pagination pagination = new Pagination(page, (int) total, ranges, limit, request);
+        Pagination pagination = new Pagination(page, (int)total, ranges, limit, request);
 
         return new ListData<>(items, pagination);
     }
@@ -194,7 +199,8 @@ public class BoardInfoService {
     }
 
     /**
-     * 게시판 별 최신 게시글
+     * 게시판별 최신 게시글
+     *
      * @param bid
      * @param limit
      * @return
@@ -203,7 +209,7 @@ public class BoardInfoService {
         BoardSearch search = new BoardSearch();
         search.setLimit(limit);
         search.setBid(List.of(bid));
-        search.setCategory( category == null ? null : List.of(category));
+        search.setCategory(category == null ? null : List.of(category));
 
         ListData<BoardData> data = getList(search);
 
@@ -219,6 +225,12 @@ public class BoardInfoService {
         return getLatest(bid, 5);
     }
 
+    /**
+     * 로그인한 회원이 작성한 게시글 목록
+     *
+     * @param search
+     * @return
+     */
     public ListData<BoardData> getMyList(BoardSearch search) {
         if (!memberUtil.isLogin()) {
             return new ListData<>(List.of(), null);
@@ -228,7 +240,7 @@ public class BoardInfoService {
         String email = member.getEmail();
         search.setEmail(List.of(email));
 
-        return  getList(search);
+        return getList(search);
     }
 
     /**
@@ -238,7 +250,7 @@ public class BoardInfoService {
      */
     private void addInfo(BoardData item, boolean isView) {
 
-//        이전, 다음 게시글
+        // 이전, 다음 게시글
         if (isView) { // 보기 페이지 데이터를 조회하는 경우만 이전, 다음 게시글을 조회
             QBoardData boardData = QBoardData.boardData;
             Long seq = item.getSeq();
@@ -247,10 +259,12 @@ public class BoardInfoService {
                     .where(boardData.seq.lt(seq))
                     .orderBy(boardData.seq.desc())
                     .fetchFirst();
+
             BoardData next = queryFactory.selectFrom(boardData)
-                            .where(boardData.seq.gt(seq))
-                                    .orderBy(boardData.seq.asc())
-                                            .fetchFirst();
+                    .where(boardData.seq.gt(seq))
+                    .orderBy(boardData.seq.asc())
+                    .fetchFirst();
+
             item.setPrev(prev);
             item.setNext(next);
         }
@@ -269,7 +283,8 @@ public class BoardInfoService {
 
         boolean editable = createdBy == null || (memberUtil.isLogin() && loggedMember.getEmail().equals(createdBy)); // 비회원게시글은 비밀번호 확인이 필요하므로 버튼 노출, 회원게시글 로그인한 회원과 일치하면 버튼 노출
 
-        boolean mine = utils.getValue(utils.getUserHash() + "_board_" + item.getSeq()) != null || (memberUtil.isLogin() && loggedMember.getEmail().equals(createdBy));
+        boolean mine = utils.getValue(utils.getUserHash() + "_board_" + item.getSeq()) != null
+                || (memberUtil.isLogin() && loggedMember.getEmail().equals(createdBy));
 
         item.setListable(listable);
         item.setWritable(writable);
@@ -277,7 +292,6 @@ public class BoardInfoService {
         item.setMine(mine);
 
         /* listable, writable, editable, mine 처리 E */
-
     }
 
     private void addInfo(BoardData item) {
@@ -287,7 +301,6 @@ public class BoardInfoService {
     /**
      * 게시글 번호와 게시판 아이디로 현재 페이지 구하기
      *
-     * @param bid
      * @param seq
      * @param limit
      * @return
@@ -300,7 +313,7 @@ public class BoardInfoService {
                 .and(boardData.seq.goe(seq));
 
         long total = boardDataRepository.count(builder);
-        int page = (int) Math.ceil((double) total / limit);
+        int page = (int)Math.ceil((double)total / limit);
 
         return page;
     }

@@ -28,7 +28,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class BoardUpdateService {
 
-    private final BoardConfigInfoService boardConfigInfoService;
+    private final BoardConfigInfoService configInfoService;
     private final BoardDataRepository boardDataRepository;
     private final MemberUtil memberUtil;
     private final PasswordEncoder passwordEncoder;
@@ -45,13 +45,13 @@ public class BoardUpdateService {
         if (mode.equals("edit")) { // 수정
             data = boardDataRepository.findById(seq).orElseThrow(BoardDataNotFoundException::new);
         } else { // 추가
-            /*
-            * 등록될때만 최초 한번 기록되는 데이터
-            * - 게시판 설정, 회원
-            * - gid
-            * - 아이피, UserAgent
-            * */
-            Board board = boardConfigInfoService.get(form.getBid());
+            /**
+             * 등록될때만 최초 한번 기록되는 데이터
+             * - 게시판 설정, 회원
+             * - gid
+             * - 아이피, UserAgent
+             */
+            Board board = configInfoService.get(form.getBid());
             data = new BoardData();
             data.setBoard(board);
             data.setGid(form.getGid());
@@ -59,15 +59,15 @@ public class BoardUpdateService {
             data.setUserAgent(request.getHeader("User-Agent"));
         }
 
-//        글등록, 글 수정 공통 반영 사항
+        // 글등록, 글 수정 공통 반영 사항
         String guestPw = form.getGuestPw();
-        if (StringUtils.hasText(guestPw)) { // 비회원 비밀번호 입력되었을 경우 암호화
+        if (StringUtils.hasText(guestPw)) { // 비회원 비밀번호
             data.setGuestPw(passwordEncoder.encode(guestPw));
         }
 
-        data.setPoster((form.getPoster()));
+        data.setPoster(form.getPoster());
 
-//        공지글 여부는 관리자만 반영 가능
+        // 공지글 여부는 관리자만 반영 가능
         if (memberUtil.isAdmin()) {
             data.setNotice(form.isNotice());
         }

@@ -23,10 +23,10 @@ import java.util.Objects;
 public class CommentUpdateService {
 
     private final CommentDataRepository commentDataRepository;
+    private final BoardDataRepository boardDataRepository;
     private final BoardInfoService boardInfoService;
     private final HttpServletRequest request;
     private final PasswordEncoder passwordEncoder;
-    private final BoardDataRepository boardDataRepository;
 
     /**
      * 댓글 등록, 수정
@@ -49,7 +49,6 @@ public class CommentUpdateService {
             item.setData(data);
             item.setIpAddr(request.getRemoteAddr());
             item.setUserAgent(request.getHeader("User-Agent"));
-
         }
 
         item.setCommenter(form.getCommenter());
@@ -70,6 +69,7 @@ public class CommentUpdateService {
 
     /**
      * 게시글 번호로 총 댓글 갯수 반영
+     *
      * @param seq : 게시글 번호
      */
     public void updateCount(Long seq) {

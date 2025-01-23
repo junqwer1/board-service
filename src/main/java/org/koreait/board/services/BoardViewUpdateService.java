@@ -3,7 +3,6 @@ package org.koreait.board.services;
 import lombok.RequiredArgsConstructor;
 import org.koreait.board.entities.BoardData;
 import org.koreait.board.entities.BoardView;
-import org.koreait.board.entities.QBoardView;
 import org.koreait.board.repositories.BoardDataRepository;
 import org.koreait.board.repositories.BoardViewRepository;
 import org.koreait.global.libs.Utils;
@@ -31,7 +30,7 @@ public class BoardViewUpdateService {
             boardViewRepository.saveAndFlush(view);
         } catch (Exception e) {}
 
-//        조회수 업데이트
+        // 조회수 업데이트
         QBoardView boardView = QBoardView.boardView;
         long total = boardViewRepository.count(boardView.seq.eq(seq));
 

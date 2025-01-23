@@ -20,7 +20,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CommentInfoService {
-
     private final CommentDataRepository commentDataRepository;
     private final ModelMapper modelMapper;
     private final JPAQueryFactory queryFactory;
@@ -28,6 +27,7 @@ public class CommentInfoService {
 
     /**
      * 댓글 한개 조회
+     *
      * @param seq
      * @return
      */
@@ -51,6 +51,7 @@ public class CommentInfoService {
 
     /**
      * 게시글 번호로 작성된 댓글 목록 조회
+     *
      * @param seq
      * @return
      */
@@ -72,6 +73,7 @@ public class CommentInfoService {
     private void addInfo(CommentData item) {
         Member member = memberUtil.getMember();
         String createdBy = item.getCreatedBy();
+
         boolean editable = memberUtil.isAdmin() || createdBy == null || (memberUtil.isLogin() && member.getEmail().equals(createdBy));
 
         item.setEditable(editable); // 댓글 수정, 삭제 가능, 다만 비회원은 비밀번호 검증 페이지로 넘어간다.

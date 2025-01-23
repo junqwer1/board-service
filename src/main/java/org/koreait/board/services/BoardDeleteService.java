@@ -19,7 +19,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class BoardDeleteService {
     private final BoardInfoService infoService;
-    private final BoardDataRepository boardDataRepository;
+    private final BoardDataRepository boardRepository;
     private final RestTemplate restTemplate;
     private final Utils utils;
 
@@ -37,14 +37,13 @@ public class BoardDeleteService {
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        String apiUrl = utils.serviceUrl("file-service", "/deletes/" +item.getGid());
+        String apiUrl = utils.serviceUrl("file-service", "/deletes/" + item.getGid());
         restTemplate.exchange(URI.create(apiUrl), HttpMethod.DELETE, request, Void.class);
-
 
         // 파일 삭제 E
 
-        boardDataRepository.delete(item);
-        boardDataRepository.flush();
+        boardRepository.delete(item);
+        boardRepository.flush();
 
         // 비회원 인증 정보 삭제
         utils.deleteValue(utils.getUserHash() + "_board_" + seq);

@@ -27,9 +27,8 @@ public class BoardAuthService {
     private final Utils utils;
     private final BoardConfigInfoService configInfoService;
     private final BoardInfoService infoService;
-    private final MemberUtil memberUtil;
     private final CommentInfoService commentInfoService;
-
+    private final MemberUtil memberUtil;
     /**
      * 게시판 권한 체크
      *
@@ -38,8 +37,8 @@ public class BoardAuthService {
      * @param seq
      */
     public void check(String mode, String bid, Long seq) {
-
-        if (!StringUtils.hasText(mode) || !StringUtils.hasText(bid) || (List.of("edit", "delete", "comment").contains(mode) && (seq == null || seq < 1L))) {
+        System.out.printf("mode=%s, bid=%s, seq=%d%n", mode, bid, seq);
+        if (!StringUtils.hasText(mode) || !StringUtils.hasText(bid) || (List.of("edit", "delete", "comment").contains(mode) && (seq == null || seq < 1L ))) {
             throw new BadRequestException();
         }
 
@@ -57,16 +56,16 @@ public class BoardAuthService {
             board = configInfoService.get(bid);
         }
 
-//        게시판 사용 여부 체크
-        if (board.isOpen()) {
+        // 게시판 사용 여부 체크
+        if (!board.isOpen()) {
             throw new BoardNotFoundException();
         }
 
         /**
-         * mode - write, list / bid
-         *      - edit, view / seq
+         * mode - write, list  / bid
+         *      - edit, view  / seq
          */
-//          글쓰기, 글 목록 권한 체크
+        // 글쓰기, 글 목록 권한 체크
         Authority authority = null;
         boolean isVerified = true;
         Member member = memberUtil.getMember(); // 현재 로그인한 회원 정보
@@ -74,9 +73,10 @@ public class BoardAuthService {
             authority = mode.equals("list") ? board.getListAuthority() : board.getWriteAuthority();
         } else if (mode.equals("view")) {
             authority = board.getViewAuthority();
-        }else if (List.of("edit", "delete").contains(mode)) { // 수정, 삭제
+
+        } else if (List.of("edit", "delete").contains(mode)) { // 수정, 삭제
             /**
-             * 1. 회원 게시글인 경우 / 직접 작성한 회원만 수정 가능
+             * 1. 회원 게시글인 경우  / 직접 작성한 회원만 수정 가능
              *
              * 2. 비회원 게시글인 경우 / 비회원 비밀번호 확인이 완료된 경우 삭제 가능
              */
@@ -86,23 +86,24 @@ public class BoardAuthService {
             if (createdBy == null) { // 비회원 게시글
                 /**
                  * 비회원 게시글이 인증된 경우 - 세션 키 - "board_게시글번호"가 존재
-                 * 인증이 되지 않는 경우 GuestPasswordCheckException을 발생 시킨다 -> 비번 확인 절차
+                 * 인증이 되지 않은 경우 GuestPasswordCheckException을 발생 시킨다 -> 비번 확인 절차
                  */
                 if (utils.getValue(utils.getUserHash() + "_board_" + seq) == null) {
                     utils.saveValue(utils.getUserHash() + "_seq", seq);
                     throw new GuestPasswordCheckException();
                 }
-            } else if (!memberUtil.isLogin() || !createdBy.equals(member.getEmail())) { // 회원 게시글 - 직접 작성한 회원만 수정 가능 통제 - 미로그인한 상태 또는 로그인 상태이지만 작성자의 이메일과 일치하지 않는 경우
+
+            } else if (!memberUtil.isLogin() || !createdBy.equals(member.getEmail())) { // 회원 게시글  - 직접 작성한 회원만 수정 가능 통제 - 미로그인 상태 또는 로그인 상태이지만 작성자의 이메일과 일치하지 않는 경우
                 isVerified = false;
             }
         } else if (mode.equals("comment")) { // 댓글 수정 삭제
             String commenter = comment.getCreatedBy();
             if (commenter == null) { // 비회원으로 작성한 댓글
-                if (utils.getValue(utils.getUserHash() + "+comment_" + seq) == null) { // 댓글 비회원 인증 X
+                if (utils.getValue(utils.getUserHash() + "_comment_" + seq) == null) { // 댓글 비회원 인증 X
                     utils.saveValue(utils.getUserHash() + "_cSeq", seq);
                     throw new GuestPasswordCheckException();
                 }
-            } else if (!memberUtil.isLogin() || !commenter.equals(member.getEmail())){ // 회원이 작성한 댓글
+            } else if (!memberUtil.isLogin() || !commenter.equals(member.getEmail())) { // 회원이 작성한 댓글
                 isVerified = false;
             }
         }
