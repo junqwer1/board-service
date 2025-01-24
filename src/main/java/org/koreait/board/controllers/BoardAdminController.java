@@ -3,7 +3,7 @@ package org.koreait.board.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.koreait.board.entities.Board;
-import org.koreait.board.services.BoardDeleteService;
+import org.koreait.board.services.configs.BoardConfigDeleteService;
 import org.koreait.board.services.configs.BoardConfigInfoService;
 import org.koreait.board.services.configs.BoardConfigUpdateService;
 import org.koreait.board.validators.BoardConfigValidator;
@@ -25,7 +25,7 @@ public class BoardAdminController {
     private final BoardConfigValidator configValidator;
     private final BoardConfigUpdateService updateService;
     private final BoardConfigInfoService infoService;
-    private final BoardDeleteService deleteService;
+    private final BoardConfigDeleteService deleteService;
 
     /**
      * 게시판 설정 등록, 수정 처리
@@ -66,9 +66,9 @@ public class BoardAdminController {
     @PatchMapping
     public JSONData update(@RequestBody List<RequestConfig> form) {
 
+        List<Board> items = updateService.process(form);
 
-
-        return null;
+        return new JSONData(items);
     }
 
     /**
@@ -80,6 +80,8 @@ public class BoardAdminController {
     @DeleteMapping("/config")
     public JSONData delete(@RequestParam("bid") List<String> bids) {
 
-        return null;
+        List<Board> items = deleteService.process(bids);
+
+        return new JSONData(items);
     }
 }
