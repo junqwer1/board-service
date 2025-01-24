@@ -13,7 +13,7 @@ import java.io.Serializable;
 public class CommentData extends BaseMemberEntity implements Serializable {
     @Id @GeneratedValue
     private Long seq;
-    
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     private BoardData data;
