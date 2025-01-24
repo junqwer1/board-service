@@ -35,6 +35,7 @@ public class BoardDeleteService {
             headers.setBearerAuth(token);
         }
 
+
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         String apiUrl = utils.serviceUrl("file-service", "/deletes/" + item.getGid());
