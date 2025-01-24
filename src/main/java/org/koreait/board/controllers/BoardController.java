@@ -4,9 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.koreait.board.entities.Board;
 import org.koreait.board.entities.BoardData;
-import org.koreait.board.services.BoardDeleteService;
-import org.koreait.board.services.BoardInfoService;
-import org.koreait.board.services.BoardUpdateService;
+import org.koreait.board.services.*;
 import org.koreait.board.services.configs.BoardConfigInfoService;
 import org.koreait.board.validators.BoardValidator;
 import org.koreait.global.exceptions.BadRequestException;
@@ -29,6 +27,8 @@ public class BoardController {
     private final BoardUpdateService updateService;
     private final BoardInfoService infoService;
     private final BoardDeleteService deleteService;
+    private final BoardAuthService authService;
+    private final BoardViewUpdateService viewUpdateService;
 
     /**
      * 게시판 설정 한개 조회
@@ -38,7 +38,8 @@ public class BoardController {
     @GetMapping("/config/{bid}")
     public JSONData config(@PathVariable("bid") String bid) {
         Board board = configInfoService.get(bid);
-        return null;
+
+        return new JSONData(board);
     }
 
     /**
@@ -96,6 +97,16 @@ public class BoardController {
     }
 
     /**
+     * 조회수 업데이트 처리
+     * @param seq
+     */
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @GetMapping("/viewcount/{seq}")
+    public void updateViewCount(@PathVariable("seq") Long seq) {
+        viewUpdateService.process(seq);
+    }
+
+    /**
      * 게시글 한개 삭제
      *
      * @param seq
@@ -106,9 +117,9 @@ public class BoardController {
         commonProcess(seq, "delete");
 
         boardValidator.checkDelete(seq); // 댓글이 존재하면 삭제 불가
-        deleteService.delete(seq);
+        BoardData item = deleteService.delete(seq);
 
-        return null;
+        return new JSONData(item);
     }
 
     /**
@@ -134,15 +145,15 @@ public class BoardController {
      * @param mode
      */
     private void commonProcess(Long seq, String mode) {
-
+        authService.check(mode, seq); // 게시판 권한 체크 - 조회, 수정, 삭제
     }
 
     /**
-     * 게시판 번호로 공통 처리
+     * 게시판 아이디로 공통 처리
      * @param bid
      * @param mode
      */
     private void commonProcess(String bid, String mode) {
-
+        authService.check(mode, bid); // 게시판 권한 체크 - 글목록, 글 작성
     }
 }
