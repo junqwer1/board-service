@@ -1,5 +1,6 @@
 package org.koreait.board.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.koreait.global.entities.BaseMemberEntity;
@@ -12,7 +13,8 @@ import java.io.Serializable;
 public class CommentData extends BaseMemberEntity implements Serializable {
     @Id @GeneratedValue
     private Long seq;
-
+    
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     private BoardData data;
 
