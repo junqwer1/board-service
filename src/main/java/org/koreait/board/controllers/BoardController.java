@@ -102,8 +102,10 @@ public class BoardController {
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @GetMapping("/viewcount/{seq}")
-    public void updateViewCount(@PathVariable("seq") Long seq) {
+    public JSONData updateViewCount(@PathVariable("seq") Long seq) {
         viewUpdateService.process(seq);
+
+        return new JSONData();
     }
 
     /**
