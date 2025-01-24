@@ -83,14 +83,19 @@ public class Pagination {
             nextRangeFirstPage = (rangeCnt + 1) * ranges + 1;
         }
 
-        /* QueryString 값 처리 S */
+        /* 쿼리스트링 값 처리 S */
 
         String qs = request == null ? "" : request.getQueryString();
+        if (request != null) {
+            baseUrl = "?";
+        } else {
+            int port = request.getServerPort();
+            String _port = port == 80 || port == 443 ? "" : "" + ":" + port;
+            baseUrl = String.format("%s://%s%s%s?", request.getScheme(), request.getServerName(), _port, StringUtils.hasText(request.getContextPath()) ? request.getContextPath() : "/");
+        }
 
-        baseUrl = request == null ? "?" : String.format("%s://%s:%d%s?", request.getScheme(), request.getServerName(), request.getServerPort(), request.getContextPath());
 
         if (StringUtils.hasText(qs)) {
-
             // "?page=" 제거(필터)하고 다시 모아서 가공
             baseUrl += Arrays.stream(qs.split("&"))
                     .filter(s -> !s.contains("page=")).collect(Collectors.joining("&")) + "&";
@@ -98,7 +103,7 @@ public class Pagination {
 
         baseUrl += "page=";
 
-        /* QueryString 값 처리 E */
+        /* 쿼리스트링 값 처리 E */
 
         this.page = page;
         this.total = total;

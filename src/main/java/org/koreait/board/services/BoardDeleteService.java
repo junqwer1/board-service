@@ -23,10 +23,9 @@ public class BoardDeleteService {
     private final RestTemplate restTemplate;
     private final Utils utils;
 
-    public void delete(Long seq) {
+    public BoardData delete(Long seq) {
 
         BoardData item = infoService.get(seq);
-        String gid = item.getGid();
 
         // 파일 삭제 S
         String token = utils.getAuthToken();
@@ -36,7 +35,7 @@ public class BoardDeleteService {
         }
 
 
-        HttpEntity<Void> request = new HttpEntity<>(headers);
+        HttpEntity<Void> request = new HttpEntity<>(utils.getRequestHeader());
 
         String apiUrl = utils.serviceUrl("file-service", "/deletes/" + item.getGid());
         restTemplate.exchange(URI.create(apiUrl), HttpMethod.DELETE, request, Void.class);
@@ -48,5 +47,7 @@ public class BoardDeleteService {
 
         // 비회원 인증 정보 삭제
         utils.deleteValue(utils.getUserHash() + "_board_" + seq);
+
+        return item;
     }
 }

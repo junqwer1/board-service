@@ -2,10 +2,17 @@ package org.koreait.board.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.koreait.board.entities.Board;
+import org.koreait.board.entities.BoardData;
+import org.koreait.board.services.*;
+import org.koreait.board.services.configs.BoardConfigInfoService;
 import org.koreait.board.validators.BoardValidator;
 import org.koreait.global.exceptions.BadRequestException;
 import org.koreait.global.libs.Utils;
+import org.koreait.global.paging.ListData;
 import org.koreait.global.rests.JSONData;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +23,12 @@ public class BoardController {
 
     private final Utils utils;
     private final BoardValidator boardValidator;
+    private final BoardConfigInfoService configInfoService;
+    private final BoardUpdateService updateService;
+    private final BoardInfoService infoService;
+    private final BoardDeleteService deleteService;
+    private final BoardAuthService authService;
+    private final BoardViewUpdateService viewUpdateService;
 
     /**
      * 게시판 설정 한개 조회
@@ -24,8 +37,9 @@ public class BoardController {
      */
     @GetMapping("/config/{bid}")
     public JSONData config(@PathVariable("bid") String bid) {
+        Board board = configInfoService.get(bid);
 
-        return null;
+        return new JSONData(board);
     }
 
     /**
@@ -47,8 +61,9 @@ public class BoardController {
         }
 
         /*서비스*/
+        BoardData data = updateService.process(form);
 
-        return null;
+        return new JSONData(data);
     }
 
     /**
@@ -59,10 +74,11 @@ public class BoardController {
      */
     @GetMapping("/view/{seq}")
     public JSONData view(@PathVariable("seq") Long seq) {
-
         commonProcess(seq, "view");
 
-        return null;
+        BoardData data = infoService.get(seq);
+
+        return new JSONData(data);
     }
 
     /**
@@ -72,11 +88,24 @@ public class BoardController {
      * @return
      */
     @GetMapping("/list/{bid}")
-    public JSONData list(@PathVariable("bid") String bid) {
-
+    public JSONData list(@PathVariable("bid") String bid, @ModelAttribute BoardSearch search) {
         commonProcess(bid, "list");
 
-        return null;
+        ListData<BoardData> data = infoService.getList(bid, search);
+
+        return new JSONData();
+    }
+
+    /**
+     * 조회수 업데이트 처리
+     * @param seq
+     */
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @GetMapping("/viewcount/{seq}")
+    public JSONData updateViewCount(@PathVariable("seq") Long seq) {
+        viewUpdateService.process(seq);
+
+        return new JSONData();
     }
 
     /**
@@ -89,7 +118,27 @@ public class BoardController {
     public JSONData delete(@PathVariable("seq") Long seq) {
         commonProcess(seq, "delete");
 
-        return null;
+        boardValidator.checkDelete(seq); // 댓글이 존재하면 삭제 불가
+        BoardData item = deleteService.delete(seq);
+
+        return new JSONData(item);
+    }
+
+    /**
+     * 비회원 비밀번호 검증
+     *  - 응답코드 204 : 검증 성공
+     *  - 응답코드 401 : 검증 실패
+     * @params seq : 게시글 번호
+     */
+    @PostMapping("/password/{seq}")
+    public ResponseEntity<Void> validateGuestPassword(@PathVariable("seq") Long seq, @RequestParam(name = "password", required = false) String password) {
+        if (!StringUtils.hasText(password)) {
+            throw new BadRequestException(utils.getMessage("NotBlank.password"));
+        }
+
+        HttpStatus status = boardValidator.checkGuestPassword(password, seq) ? HttpStatus.NO_CONTENT : HttpStatus.UNAUTHORIZED;
+
+        return ResponseEntity.status(status).build();
     }
 
     /**
@@ -98,15 +147,15 @@ public class BoardController {
      * @param mode
      */
     private void commonProcess(Long seq, String mode) {
-
+        authService.check(mode, seq); // 게시판 권한 체크 - 조회, 수정, 삭제
     }
 
     /**
-     * 게시판 번호로 공통 처리
+     * 게시판 아이디로 공통 처리
      * @param bid
      * @param mode
      */
     private void commonProcess(String bid, String mode) {
-
+        authService.check(mode, bid); // 게시판 권한 체크 - 글목록, 글 작성
     }
 }

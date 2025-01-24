@@ -93,7 +93,7 @@ public class Utils {
      * @param url
      * @return
      */
-    public String serviceUrl(String serviceId, String url) {
+    public String  serviceUrl(String serviceId, String url) {
         try {
             List<ServiceInstance> instances = discoveryClient.getInstances(serviceId);
             String profile = System.getenv("spring.profiles.active");
@@ -128,7 +128,6 @@ public class Utils {
         return StringUtils.hasText(auth) ? auth.substring(7).trim() : null;
     }
 
-
     /**
      * 전체 주소
      *
@@ -136,11 +135,14 @@ public class Utils {
      * @return
      */
     public String getUrl(String url) {
-        return String.format("%s://%s:%d%s%s", request.getScheme(), request.getServerName(), request.getServerPort(), request.getContextPath(), url);
+        int port = request.getServerPort();
+        String _port = port == 80 || port == 443 ? "" : ":" + port;
+        return String.format("%s://%s%s%s%s", request.getScheme(), request.getServerName(), _port, request.getContextPath(), url);
     }
 
     /**
      * Code - Value 레디스 저장소 저장
+     *
      * @param code
      * @param value
      */
@@ -160,13 +162,14 @@ public class Utils {
      * @param <T>
      */
     public <T> T getValue(String code) {
-       CodeValue item = codeValueRepository.findByCode(code);
+        CodeValue item = codeValueRepository.findByCode(code);
 
-       return item == null ? null : (T)item.getValue();
+        return item == null ? null : (T)item.getValue();
     }
 
     /**
      * 저장된 값 code로 삭제
+     *
      * @param code
      */
     public void deleteValue(String code) {
@@ -175,7 +178,6 @@ public class Utils {
 
     public String getUserHash() {
         String userKey = "" + Objects.hash("userHash");
-        String userHash = "";
 
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
@@ -202,12 +204,13 @@ public class Utils {
     /**
      * 요청 헤더
      *  - JWT 토큰이 있으면 자동 추가
+     *
      * @return
      */
     public HttpHeaders getRequestHeader() {
         String token = getAuthToken();
         HttpHeaders headers = new HttpHeaders();
-        if (StringUtils.hasText(token)){
+        if (StringUtils.hasText(token)) {
             headers.setBearerAuth(token);
         }
 
@@ -225,4 +228,5 @@ public class Utils {
             return Objects.hash(ip, ua);
         }
     }
+
 }
