@@ -3,6 +3,7 @@ package org.koreait.board.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.koreait.board.entities.Board;
+import org.koreait.board.services.BoardDeleteService;
 import org.koreait.board.services.configs.BoardConfigDeleteService;
 import org.koreait.board.services.configs.BoardConfigInfoService;
 import org.koreait.board.services.configs.BoardConfigUpdateService;

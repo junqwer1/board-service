@@ -93,7 +93,7 @@ public class BoardController {
 
         ListData<BoardData> data = infoService.getList(bid, search);
 
-        return new JSONData();
+        return new JSONData(data);
     }
 
     /**
@@ -102,10 +102,8 @@ public class BoardController {
      */
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @GetMapping("/viewcount/{seq}")
-    public JSONData updateViewCount(@PathVariable("seq") Long seq) {
+    public void updateViewCount(@PathVariable("seq") Long seq) {
         viewUpdateService.process(seq);
-
-        return new JSONData();
     }
 
     /**
